@@ -91,6 +91,18 @@ WebappZip.prototype.isExcludedFromZip = function(file) {
     function isMakefile(file) {
       return /Makefile/.test(file.path);
     },
+    function isPackageJson(file) {
+      return /package\.json/.test(file.path);
+    },
+    function isYarnLock(file) {
+      return /yarn\.lock/.test(file.path);
+    },
+    function isWebpackConfig(file) {
+      return /webpack\.config/.test(file.path);
+    },
+    function isSourceMap(file) {
+      return /\.map$/.test(file.path);
+    },
     function isReadme(file) {
       return /README/.test(file.path);
     },
@@ -98,14 +110,19 @@ WebappZip.prototype.isExcludedFromZip = function(file) {
       return file.isHidden();
     },
     function isTest(file) {
-      var appPath = self.buildDir;
-      var path = file.path.substr(appPath.path.length + 1).split(/[\\/]/)[0];
-      return path === 'test';
+      var appDir = self.buildDir;
+      var appPath = file.path.substr(appDir.path.length + 1).split(/[\\/]/)[0];
+      return appPath === 'test';
+    },
+    function isTestData(file) {
+      var appDir = self.buildDir;
+      var appPath = file.path.substr(appDir.path.length + 1).split(/[\\/]/)[0];
+      return appPath === 'test-data';
     },
     function isGit(file) {
-      var appPath = self.buildDir;
-      var path = file.path.substr(appPath.path.length + 1).split(/[\\/]/)[0];
-      return path === '.git';
+      var appDir = self.buildDir;
+      var appPath = file.path.substr(appDir.path.length + 1).split(/[\\/]/)[0];
+      return appPath === '.git';
     },
     function isL10n(file) {
       return (self.config.GAIA_CONCAT_LOCALES === '1' &&
@@ -115,6 +132,16 @@ WebappZip.prototype.isExcludedFromZip = function(file) {
       return ((file.leafName === 'locales-obj' ||
         file.parent.leafName === 'locales-obj') &&
         self.config.GAIA_CONCAT_LOCALES !== '1');
+    },
+    function isScss(file) {
+      var appDir = self.buildDir;
+      var appPath = file.path.substr(appDir.path.length + 1).split(/[\\/]/)[0];
+      return appPath === 'scss';
+    },
+    function isReact(file) {
+      var appDir = self.buildDir;
+      var appPath = file.path.substr(appDir.path.length + 1).split(/[\\/]/)[0];
+      return appPath === 'src';
     }
   ];
   for (var index in excludedFuncs) {

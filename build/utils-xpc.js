@@ -654,19 +654,16 @@ function basename(path) {
  * @param  {string}  path       the file to copy,
  * @param  {string}  toParent   where to put the new file,
  * @param  {string}  name       the name of the new file,
- * @param  {boolean} override   set to true to overwride it if it is existed.
 
  * Note: this function is a wrapper function for node.js
  */
-function copyFileTo(path, toParent, name, override) {
+function copyFileTo(path, toParent, name) {
   var file = ((typeof path === 'string') ? getFile(path) : path);
   var parentFile = getFile(toParent);
   ensureFolderExists(parentFile);
-  if (override) {
-    var toFile = getFile(toParent, name);
-    if (toFile.exists()) {
-      toFile.remove(true);
-    }
+  var toFile = getFile(toParent, name);
+  if (toFile.exists()) {
+    toFile.remove(true);
   }
   file.copyTo(parentFile, name);
 }
@@ -678,11 +675,11 @@ function copyFileTo(path, toParent, name, override) {
  * @param  {string}  path       the directory to copy,
  * @param  {string}  toParent   where to put the new directory,
  * @param  {string}  name       the name of the copied directory,
- * @param  {boolean} override   set to true to overwride it if it is existed.
+ * @param  {boolean} exclude    set exclude pattern of file or dir name
 
  * Note: this function is a wrapper function for node.js
  */
-function copyDirTo(path, toParent, name, override) {
+function copyDirTo(path, toParent, name, exclude) {
   var dir = ((typeof path === 'string') ? getFile(path) : path);
   var parentFile = getFile(toParent);
   ensureFolderExists(parentFile);
@@ -690,17 +687,48 @@ function copyDirTo(path, toParent, name, override) {
   var newFolderName = joinPath(toParent, name);
   var files = ls(dir, false);
   files.forEach(function(file) {
+    if (exclude && exclude.test && exclude.test(file.leafName)) {
+      // Early return on exclude files/directories.
+      return;
+    }
+
     if (file.isFile()) {
-      copyFileTo(file.path, newFolderName, file.leafName, true);
+      copyFileTo(file.path, newFolderName, file.leafName);
     } else if (file.isDirectory()) {
-      copyDirTo(file.path, newFolderName, file.leafName, true);
+      copyDirTo(file.path, newFolderName, file.leafName, exclude);
     }
   });
 }
 
-function copyToStage(options) {
+function copyToStage(options, config) {
   var appDir = getFile(options.APP_DIR);
-  copyDirTo(appDir, options.STAGE_DIR, appDir.leafName);
+
+  var appStagePath;
+  var appExcludeList;
+  if (typeof config === 'string') {
+    appStagePath = config;
+  } else if (typeof config === 'object') {
+    appStagePath = config.stagePath || undefined;
+    appExcludeList = config.exclude || [];
+  } else if (typeof config === 'undefined') {
+    appStagePath = undefined;
+    appExcludeList = [];
+  }
+
+  var globalExcludeList = [
+    '\\..*',
+    'node_modules',
+    appDir.leafName + '.' + options.GAIA_DOMAIN
+  ];
+  var excludeList = globalExcludeList.concat(appExcludeList);
+  var exclude = new RegExp('^(?:' +  excludeList.join('|') + ')$');
+
+  if (appStagePath) {
+    var appStageDir = getFile(options.APP_DIR, appStagePath, appDir.leafName);
+    copyDirTo(appStageDir, options.STAGE_DIR, appDir.leafName, exclude);
+  } else {
+    copyDirTo(appDir, options.STAGE_DIR, appDir.leafName, exclude);
+  }
 }
 
 /**

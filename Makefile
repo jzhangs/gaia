@@ -270,8 +270,17 @@ endif
 # Note: this used to be just xulrunner, hence the use of that name throughout,
 # but xulrunner doesn't include everything we need
 
+XULRUNNER_BASE_DIR := b2g_sdk
+USE_LOCAL_XULRUNNER_SDK ?= 1
+
 # Configuration for pre-built or already downloaded b2g (or alternative)
 ifdef USE_LOCAL_XULRUNNER_SDK
+
+ifeq ($(SYS),Darwin)
+XULRUNNER_DIRECTORY ?= $(GAIA_DIR)/$(XULRUNNER_BASE_DIR)/mac64
+else ifeq ($(ARCH),x86_64)
+XULRUNNER_DIRECTORY ?= $(GAIA_DIR)/$(XULRUNNER_BASE_DIR)/$(ARCH)
+endif
 
 ifndef XULRUNNER_DIRECTORY
 $(error XULRUNNER_DIRECTORY must be set if USE_LOCAL_XULRUNNER_SDK is set)
